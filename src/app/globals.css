@@ -3,17 +3,21 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+  * {
+    @apply border-gray-800;
+  }
+  
+  html {
+    color-scheme: dark;
+  }
+  
+  body {
+    @apply bg-gray-950 text-white antialiased;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }
