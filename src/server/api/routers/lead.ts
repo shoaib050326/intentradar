@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { router, publicProcedure } from '../trpc'
+import { router, protectedProcedure } from '../trpc'
 import { generatePainSummary, generateReplyDrafts } from '@/lib/ai'
 
 export const leadRouter = router({
-  list: publicProcedure
+  list: protectedProcedure
     .input(
       z.object({
         watchlistId: z.string().optional(),
@@ -36,7 +36,7 @@ export const leadRouter = router({
 
       if (input?.unreplied) {
         const actionTypes = await ctx.prisma.leadAction.findMany({
-          where: { actionType: 'replied' },
+          where: { actionType: 'replied', userId: ctx.dbUser.id },
           select: { leadId: true },
         })
         const repliedIds = new Set(actionTypes.map((a) => a.leadId))
@@ -46,7 +46,7 @@ export const leadRouter = router({
       return filtered
     }),
 
-  get: publicProcedure
+  get: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       return ctx.prisma.leadCandidate.findUnique({
@@ -61,7 +61,7 @@ export const leadRouter = router({
       })
     }),
 
-  generateReplies: publicProcedure
+  generateReplies: protectedProcedure
     .input(z.object({ leadId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const lead = await ctx.prisma.leadCandidate.findUnique({
@@ -91,7 +91,7 @@ export const leadRouter = router({
       })
     }),
 
-  analyze: publicProcedure
+  analyze: protectedProcedure
     .input(z.object({ leadId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const lead = await ctx.prisma.leadCandidate.findUnique({
@@ -112,7 +112,7 @@ export const leadRouter = router({
       })
     }),
 
-  addAction: publicProcedure
+  addAction: protectedProcedure
     .input(
       z.object({
         leadId: z.string(),
@@ -123,7 +123,7 @@ export const leadRouter = router({
       return ctx.prisma.leadAction.create({
         data: {
           leadId: input.leadId,
-          userId: 'demo-user', // TODO: Add auth
+          userId: ctx.dbUser.id,
           actionType: input.actionType,
         },
       })

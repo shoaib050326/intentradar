@@ -1,9 +1,10 @@
 import { z } from 'zod'
-import { router, publicProcedure } from '../trpc'
+import { router, protectedProcedure } from '../trpc'
 
 export const watchlistRouter = router({
-  list: publicProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.watchlist.findMany({
+      where: { userId: ctx.dbUser.id },
       include: {
         sources: true,
         keywords: true,
@@ -12,7 +13,7 @@ export const watchlistRouter = router({
     })
   }),
 
-  get: publicProcedure
+  get: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       return ctx.prisma.watchlist.findUnique({
@@ -24,7 +25,7 @@ export const watchlistRouter = router({
       })
     }),
 
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -36,7 +37,7 @@ export const watchlistRouter = router({
       return ctx.prisma.watchlist.create({
         data: {
           name: input.name,
-          userId: 'demo-user', // TODO: Add auth
+          userId: ctx.dbUser.id,
           sources: {
             create: input.subreddits.map((s) => ({ subreddit: s })),
           },
@@ -51,7 +52,7 @@ export const watchlistRouter = router({
       })
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -91,7 +92,7 @@ export const watchlistRouter = router({
       })
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.watchlist.delete({

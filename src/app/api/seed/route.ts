@@ -11,57 +11,11 @@ export async function POST() {
     await prisma.leadCandidate.deleteMany()
     await prisma.post.deleteMany()
 
-    // Create demo user
-    const user = await prisma.user.upsert({
-      where: { id: 'demo-user' },
-      update: {},
-      create: {
-        id: 'demo-user',
-        email: 'demo@intentradar.com',
-        name: 'Demo User',
-        plan: 'starter',
-      },
-    })
-
-    // Clear old watchlists and create fresh ones
-    await prisma.watchlistKeyword.deleteMany()
-    await prisma.watchlistSource.deleteMany()
-    await prisma.watchlist.deleteMany()
-
-    // Create watchlist
-    const watchlist = await prisma.watchlist.create({
-      data: {
-        userId: user.id,
-        name: 'SaaS Leads',
-        sources: {
-          create: [
-            { subreddit: 'SaaS' },
-            { subreddit: 'startups' },
-            { subreddit: 'Entrepreneur' },
-            { subreddit: 'smallbusiness' },
-            { subreddit: 'indiehackers' },
-          ],
-        },
-        keywords: {
-          create: [
-            { keyword: 'looking for' },
-            { keyword: 'need' },
-            { keyword: 'recommend' },
-            { keyword: 'tool' },
-            { keyword: 'software' },
-            { keyword: 'automation' },
-            { keyword: 'alternative' },
-            { keyword: 'help' },
-          ],
-        },
-      },
-    })
-
     // Create sample posts with realistic data
     const posts = [
       {
         title: 'Looking for CRM software for my SaaS business',
-        body: 'We are a team of 5 looking for a CRM that integrates with Stripe. Currently doing everything in spreadsheets and it is painful. Any recommendations? Budget is around $50/user.',
+        body: 'We are a team of 5 looking for a CRM that integrates with Stripe. Currently doing everything in spreadsheets and it is painful. Any recommendations? Budget is around \$50/user.',
         author: 'saasfounder123',
         subreddit: 'SaaS',
         score: 45,
@@ -69,7 +23,7 @@ export async function POST() {
       },
       {
         title: 'Need tool for marketing automation ASAP',
-        body: 'We spend too much time on manual email follow-ups. Looking for something to automate our drip campaigns. Budget around $100/month. What do you recommend? Our team is growing fast and we need something scalable.',
+        body: 'We spend too much time on manual email follow-ups. Looking for something to automate our drip campaigns. Budget around \$100/month. What do you recommend? Our team is growing fast and we need something scalable.',
         author: 'growthhacker99',
         subreddit: 'startups',
         score: 23,
@@ -93,7 +47,7 @@ export async function POST() {
       },
       {
         title: 'What tools do you use for customer support?',
-        body: 'Just launched our product and getting overwhelmed with support requests. Currently using email but need something better. What do you all recommend? Looking for something under $50/month.',
+        body: 'Just launched our product and getting overwhelmed with support requests. Currently using email but need something better. What do you all recommend? Looking for something under \$50/month.',
         author: 'newfounder',
         subreddit: 'startups',
         score: 56,
@@ -122,22 +76,6 @@ export async function POST() {
         subreddit: 'smallbusiness',
         score: 28,
         numComments: 11,
-      },
-      {
-        title: 'Need invoicing software for SaaS business',
-        body: 'Currently using manual invoices and its taking too much time. Looking for automated invoicing that can handle subscriptions. Any recommendations? Must integrate with Stripe.',
-        author: 'solo developer',
-        subreddit: 'SaaS',
-        score: 19,
-        numComments: 7,
-      },
-      {
-        title: 'Looking for analytics tool for product metrics',
-        body: 'Need to track user behavior and product metrics. Currently using Mixpanel but its expensive. Any affordable alternatives? Need funnels, cohorts, and retention reports.',
-        author: 'productmanager',
-        subreddit: 'startups',
-        score: 52,
-        numComments: 28,
       },
     ]
 
@@ -169,14 +107,6 @@ export async function POST() {
         score += 2
         reasons.push('urgency')
       }
-      if (text.includes('budget') || text.includes('affordable') || text.includes('expensive')) {
-        score += 1
-        reasons.push('budget_aware')
-      }
-      if (text.includes('first') || text.includes('just launched') || text.includes('new')) {
-        score += 1
-        reasons.push('early_stage')
-      }
 
       score = Math.min(10, score)
 
@@ -195,7 +125,6 @@ export async function POST() {
       success: true, 
       message: 'Sample data seeded successfully',
       leadsCreated: posts.length,
-      watchlist: watchlist.name
     })
   } catch (error) {
     console.error('Seed error:', error)
