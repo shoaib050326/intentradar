@@ -8,14 +8,25 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  clerkId   String     @unique
-  email     String     @unique
+  id        String       @id @default(cuid())
+  clerkId   String       @unique
+  email     String       @unique
   name      String?
-  plan      String     @default("starter")
-  createdAt DateTime   @default(now())
+  plan      String       @default("starter")
+  createdAt DateTime     @default(now())
   watchlists Watchlist[]
   leadActions LeadAction[]
+  settings  UserSettings?
+}
+
+model UserSettings {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailDigest     Boolean @default(true)
+  highIntentOnly  Boolean @default(false)
+  weeklyReport    Boolean @default(true)
+  notifications   Boolean @default(true)
 }
 
 model Watchlist {
@@ -60,13 +71,20 @@ model LeadCandidate {
   id           String      @id @default(cuid())
   postId       String      @unique
   post         Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId       String?     // Owner of this lead (for multi-tenant isolation)
   intentScore  Int
   intentBucket String
   painSummary  String?
   reasonCodes  String[]
+  archived     Boolean     @default(false)
+  snoozedUntil DateTime?
+  notes        String?
   createdAt    DateTime    @default(now())
   draftReplies DraftReply[]
   leadActions  LeadAction[]
+
+  @@index([userId])
+  @@index([userId, intentBucket])
 }
 
 model DraftReply {

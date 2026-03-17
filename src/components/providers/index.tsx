@@ -6,8 +6,17 @@ import { createTRPCReact } from '@trpc/react-query'
 import { useState } from 'react'
 import superjson from 'superjson'
 import type { AppRouter } from '@/server/api/root'
+import { NotificationProvider } from '@/components/notifications'
 
 export const trpc = createTRPCReact<AppRouter>()
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchInterval: 60000, // Auto-refresh every 60 seconds
+      staleTime: 30000, // Data is fresh for 30 seconds
+    },
+  },
+})
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return ''
@@ -15,7 +24,6 @@ function getBaseUrl() {
 }
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient())
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
@@ -29,7 +37,9 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <NotificationProvider>{children}</NotificationProvider>
+      </QueryClientProvider>
     </trpc.Provider>
   )
 }

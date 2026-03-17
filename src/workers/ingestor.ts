@@ -29,7 +29,7 @@ export function calculateIntentScore(
   createdAt: Date
 ): { score: number; reasons: string[] } {
   const text = `${title} ${body || ''}`.toLowerCase()
-  let score = 0
+  let score = 5 // Start with base score
   const reasons: string[] = []
 
   for (const term of PAIN_TERMS) {
@@ -84,27 +84,43 @@ export function getIntentBucket(score: number): string {
   return 'low'
 }
 
-export async function ingestAndScore() {
-  console.log('Starting Reddit ingestion...')
+export async function ingestAndScore(userId?: string) {
+  console.log('Starting Reddit ingestion...' + (userId ? ` for user: ${userId}` : ''))
 
-  const watchlists = await prisma.watchlist.findMany({
-    include: {
-      sources: true,
-      keywords: true,
-    },
-  })
-
-  if (watchlists.length === 0) {
-    console.log('No watchlists configured, skipping ingestion')
-    return
+  // If userId is provided, only fetch that user's watchlist
+  let watchlists: any[] = []
+  
+  if (userId) {
+    watchlists = await prisma.watchlist.findMany({
+      where: { userId },
+      include: {
+        sources: true,
+        keywords: true,
+      },
+    })
+  } else {
+    // Legacy: fetch all watchlists (for backward compat, but leads won't be shown to any user)
+    watchlists = await prisma.watchlist.findMany({
+      include: {
+        sources: true,
+        keywords: true,
+      },
+    })
   }
 
-  const subreddits = Array.from(new Set(watchlists.flatMap((w) => w.sources.map((s) => s.subreddit))))
+  // Default subreddits if no watchlists exist
+  let subreddits = ['saas', 'startups', 'entrepreneur', 'smallbusiness', 'indiehackers']
+  
+  if (watchlists.length > 0) {
+    subreddits = Array.from(new Set(watchlists.flatMap((w) => w.sources.map((s: any) => s.subreddit))))
+  }
 
   if (subreddits.length === 0) {
     console.log('No subreddits configured, skipping ingestion')
     return
   }
+
+  console.log('Fetching from subreddits:', subreddits)
 
   try {
     const posts = await fetchRedditPosts(subreddits, 100)
@@ -124,16 +140,26 @@ export async function ingestAndScore() {
         mapped.createdAt
       )
 
-      if (score >= 5) {
+      console.log(`Post: "${mapped.title.substring(0,30)}..." - Score: ${score}`)
+
+      // Save all posts with score >= 3 as leads
+      if (score >= 3) {
+        const leadData: any = {
+          intentScore: score,
+          intentBucket: getIntentBucket(score),
+          reasonCodes: reasons,
+        }
+        
+        // Associate with user if userId is provided
+        if (userId) {
+          leadData.userId = userId
+        }
+        
         await prisma.post.create({
           data: {
             ...mapped,
             leadCandidate: {
-              create: {
-                intentScore: score,
-                intentBucket: getIntentBucket(score),
-                reasonCodes: reasons,
-              },
+              create: leadData,
             },
           },
         })

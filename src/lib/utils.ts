@@ -5,6 +5,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function sanitizeHtml(input: string): string {
+  // Escape HTML to prevent XSS from user-generated content (Reddit comments)
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .slice(0, 10000) // Limit length
+}
+
 export function getIntentBucket(score: number): string {
   if (score >= 8) return 'high'
   if (score >= 5) return 'medium'

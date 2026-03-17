@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { UserMenu } from '@/components/user/user-menu'
 import { 
   Radar, 
   MessageCircle, 
@@ -32,11 +33,7 @@ export default function Home() {
             <Link href="#how-it-works" className="text-gray-400 hover:text-white transition">How It Works</Link>
             <Link href="#features" className="text-gray-400 hover:text-white transition">Features</Link>
             <Link href="#pricing" className="text-gray-400 hover:text-white transition">Pricing</Link>
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800">
-                Sign In
-              </Button>
-            </Link>
+            <UserMenu />
           </div>
         </div>
       </nav>
@@ -251,101 +248,37 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Social Proof */}
-      <section className="py-24">
+      {/* Features */}
+      <section id="features" className="py-24 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Trusted by SaaS Founders</h2>
-            <p className="text-gray-400">Join hundreds of founders finding customers on autopilot</p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Everything You Need to{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400">
+                Win More Customers
+              </span>
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { name: 'Alex Chen', role: 'Founder, GrowFlow', quote: 'Found 3 paying customers in my first week. This tool pays for itself.' },
-              { name: 'Sarah Miller', role: 'Indie Hacker', quote: 'The AI reply drafts are amazing. I just copy, paste, and customize.' },
-              { name: 'Mike Johnson', role: 'Solo Founder', quote: 'Finally, a way to find leads without spending hours on Reddit.' }
-            ].map((testimonial, i) => (
+              { icon: Target, title: 'Intent Scoring', desc: 'AI scores posts 0-10 based on buyer intent. Focus on hot leads first.' },
+              { icon: Brain, title: 'Pain Extraction', desc: 'Automatically identify the core problem the poster is trying to solve.' },
+              { icon: MessageCircle, title: 'Reply Generator', desc: 'Get AI-written reply drafts that sound helpful, not salesy.' },
+              { icon: Mail, title: 'Daily Digest', desc: 'Wake up to an email with your top leads every morning.' },
+              { icon: TrendingUp, title: 'Lead Tracking', desc: 'Track every interaction: replied, qualified, won - never lose a lead.' },
+              { icon: Zap, title: 'Real-time Monitoring', desc: 'Posts are fetched regularly. Be the first to respond.' },
+            ].map((feature, i) => (
               <Card key={i} className="bg-gray-800 border-gray-700">
                 <CardContent className="pt-6">
-                  <p className="text-gray-300 mb-4 italic">"{testimonial.quote}"</p>
-                  <div>
-                    <p className="font-semibold">{testimonial.name}</p>
-                    <p className="text-sm text-gray-500">{testimonial.role}</p>
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4">
+                    <feature.icon className="w-5 h-5 text-white" />
                   </div>
+                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-gray-400 text-sm">{feature.desc}</p>
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="py-24 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-xl text-gray-400">Start free, upgrade when you're ready</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Starter */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-xl">Starter</CardTitle>
-                <p className="text-3xl font-bold">$29<span className="text-lg text-gray-500 font-normal">/mo</span></p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-gray-300">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> 2 watchlists</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> 50 leads/month</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> AI summaries</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> Reply drafts</li>
-                </ul>
-                <Link href="/dashboard">
-                  <Button className="w-full mt-6" variant="outline">Get Started</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Pro */}
-            <Card className="bg-gradient-to-b from-blue-900/30 border-blue-500/30">
-              <CardHeader>
-                <div className="text-sm text-blue-400 font-medium mb-1">Most Popular</div>
-                <CardTitle className="text-xl">Pro</CardTitle>
-                <p className="text-3xl font-bold">$79<span className="text-lg text-gray-500 font-normal">/mo</span></p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-gray-300">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-blue-400" /> Unlimited watchlists</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-blue-400" /> 500 leads/month</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-blue-400" /> AI summaries & replies</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-blue-400" /> Daily digest email</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-blue-400" /> Lead tracking</li>
-                </ul>
-                <Link href="/dashboard">
-                  <Button className="w-full mt-6 bg-blue-600 hover:bg-blue-700">Start Free Trial</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Agency */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-xl">Agency</CardTitle>
-                <p className="text-3xl font-bold">$199<span className="text-lg text-gray-500 font-normal">/mo</span></p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-gray-300">
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> Everything in Pro</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> Unlimited leads</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> 5 team members</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> Priority support</li>
-                </ul>
-                <Link href="/dashboard">
-                  <Button className="w-full mt-6" variant="outline">Contact Sales</Button>
-                </Link>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </section>
@@ -357,7 +290,7 @@ export default function Home() {
             Ready to Find Your Next Customer?
           </h2>
           <p className="text-xl text-gray-400 mb-8">
-            Join hundreds of founders who never miss a lead again.
+            Join founders who never miss a lead again.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/dashboard">

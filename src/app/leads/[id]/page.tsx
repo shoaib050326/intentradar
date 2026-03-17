@@ -4,7 +4,8 @@ import { trpc } from '@/components/providers'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatDate, getIntentBucket } from '@/lib/utils'
+import { formatDate, getIntentBucket, sanitizeHtml } from '@/lib/utils'
+import { fetchRedditComments, type RedditComment } from '@/lib/reddit'
 import { 
   ArrowLeft, 
   ExternalLink, 
@@ -16,11 +17,13 @@ import {
   User,
   Trophy,
   RefreshCw,
-  Radar
+  Radar,
+  Target,
+  MessageCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const actionLabels: Record<string, string> = {
   replied: 'Replied',
@@ -34,8 +37,37 @@ export default function LeadDetail() {
   const params = useParams()
   const leadId = params.id as string
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+  const [comments, setComments] = useState<RedditComment[]>([])
+  const [loadingComments, setLoadingComments] = useState(false)
 
   const { data: lead, refetch } = trpc.lead.get.useQuery({ id: leadId })
+  const { data: watchlists } = trpc.watchlist.list.useQuery()
+
+  const matchedWatchlists = watchlists?.filter(wl => 
+    wl.sources.some(s => s.subreddit.toLowerCase() === lead?.post.subreddit.toLowerCase())
+  ) || []
+
+  const loadComments = async () => {
+    if (!lead) return
+    setLoadingComments(true)
+    try {
+      const commentsData = await fetchRedditComments(
+        lead.post.subreddit,
+        lead.post.postId,
+        10
+      )
+      setComments(commentsData)
+    } catch (error) {
+      console.error('Error loading comments:', error)
+    }
+    setLoadingComments(false)
+  }
+
+  useEffect(() => {
+    if (lead && lead.post.numComments > 0) {
+      loadComments()
+    }
+  }, [lead?.post.subreddit, lead?.post.postId])
 
   const generateRepliesMutation = trpc.lead.generateReplies.useMutation({
     onSuccess: () => refetch(),
@@ -48,6 +80,19 @@ export default function LeadDetail() {
   const addActionMutation = trpc.lead.addAction.useMutation({
     onSuccess: () => refetch(),
   })
+
+  const updateNotesMutation = trpc.lead.updateNotes.useMutation({
+    onSuccess: () => refetch(),
+  })
+
+  const [notes, setNotes] = useState(lead?.notes || '')
+  const [savingNotes, setSavingNotes] = useState(false)
+
+  useEffect(() => {
+    if (lead?.notes !== undefined) {
+      setNotes(lead.notes || '')
+    }
+  }, [lead?.notes])
 
   const copyToClipboard = (text: string, index: number) => {
     navigator.clipboard.writeText(text)
@@ -119,6 +164,70 @@ export default function LeadDetail() {
                   <span>Score: {lead.post.score}</span>
                   <span>Comments: {lead.post.numComments}</span>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Comments Section */}
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-blue-400" />
+                    Comments ({lead.post.numComments})
+                  </CardTitle>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={loadComments}
+                    disabled={loadingComments}
+                    className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${loadingComments ? 'animate-spin' : ''}`} />
+                    {loadingComments ? 'Loading...' : 'Refresh'}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {comments.length > 0 ? (
+                  <div className="space-y-4">
+                    {comments.map((comment) => (
+                      <div key={comment.id} className="p-3 bg-gray-800 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                          <User className="w-3 h-3" />
+                          <span className="font-medium text-gray-300">u/{comment.author}</span>
+                          <span>•</span>
+                          <span>{comment.score} points</span>
+                          <span>•</span>
+                          <span>{formatDate(new Date(comment.created_utc * 1000))}</span>
+                        </div>
+                        <p className="text-gray-300 text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizeHtml(comment.body) }} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    {loadingComments ? (
+                      <RefreshCw className="w-6 h-6 mx-auto animate-spin text-gray-400" />
+                    ) : lead.post.numComments === 0 ? (
+                      <p className="text-gray-500">No comments on this post</p>
+                    ) : (
+                      <div>
+                        <p className="text-gray-400 mb-3">
+                          Comments may not be available for demo posts.
+                          Try fetching fresh leads from Reddit.
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={loadComments}
+                          className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Try Load Comments
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -246,6 +355,53 @@ export default function LeadDetail() {
                 ) : (
                   <p className="text-gray-500 text-sm">No reason codes available</p>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Matched Watchlists */}
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Target className="w-5 h-5 text-blue-400" />
+                  Matched Watchlists
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {matchedWatchlists.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {matchedWatchlists.map(wl => (
+                      <Badge key={wl.id} variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                        {wl.name}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No matching watchlists</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Notes */}
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <User className="w-5 h-5 text-yellow-400" />
+                  Your Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <textarea
+                  className="w-full h-32 bg-gray-800 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 resize-none"
+                  placeholder="Add your notes about this lead..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  onBlur={() => {
+                    if (notes !== lead?.notes) {
+                      updateNotesMutation.mutate({ id: leadId, notes })
+                    }
+                  }}
+                />
+                <p className="text-xs text-gray-500 mt-2">Notes are saved automatically when you click away</p>
               </CardContent>
             </Card>
           </div>
